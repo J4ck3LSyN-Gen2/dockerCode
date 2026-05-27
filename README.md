@@ -1,5 +1,7 @@
 # Docker-Code
 
+A hardened, containerized development environment based on VS Code (code-server), designed to provide a "Zero Trust" extension sandbox without sacrificing developer velocity.
+
 ![example](docs/dockerCodeExample.png)
 __Container Author:__ J4ck3LSyN  
 __Version:__ 0.9.0
