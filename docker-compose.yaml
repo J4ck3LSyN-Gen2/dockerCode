@@ -1,0 +1,66 @@
+services:
+  dockercode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: docker-code
+    image: dc-iso
+    working_dir: /home/coder/project
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./project:/home/coder/project:rw
+      - code_extensions:/home/coder/.local/share/code-server:rw
+      - code_config:/home/coder/.config:rw
+      # Read-only configuration file bind
+      - type: bind
+        source: ./.hash
+        target: /home/coder/.hash
+        read_only: true
+    env_file:
+      - .env
+    environment:
+      - EXTENSIONS_GALLERY={"serviceUrl":"https://marketplace.visualstudio.com/_apis/public/gallery","itemUrl":"https://marketplace.visualstudio.com/items"}
+      - DEFAULT_WORKSPACE=/home/coder/project
+      - CS_DISABLE_FILE_DOWNLOADS=true
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - OLLAMA_API_BASE=http://host.docker.internal:11434/api
+      - PYTHONUSERBASE=/home/coder/.local
+      - PIP_CACHE_DIR=/home/coder/.cache/pip
+      - DISABLE_TELEMETRY=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    user: "1000:1000"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      # noexec/nosuid stripped from /tmp only if node/pip compilation wheels require local binaries
+      - /tmp:size=128M,mode=1777
+      - /home/coder/.cache:size=512M,mode=0700
+      - /run:size=32M,mode=0755
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    restart: unless-stopped
+    healthcheck:
+      # Using a sub-shell or curl with an ignored exit code or matching code-server's exact endpoint response
+      test: ["CMD-SHELL", "curl -sSf http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  code_extensions:
+    name: code_extensions
+  code_config:
+    name: code_config
